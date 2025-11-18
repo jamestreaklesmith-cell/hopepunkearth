@@ -30,8 +30,8 @@ def get_ecosia():
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
         html = requests.get("https://www.ecosia.org/trees", headers=headers, timeout=10).text
-        match = re.search(r'data-trees="(\d+)"', html)
-        return int(match.group(1)) if match else 215000000
+        match = re.search(r'(\d{1,3}(?:,\d{3})*) trees planted', html)
+        return int(match.group(1).replace(',', '')) if match else 215000000
     except:
         return 215000000
 
@@ -42,7 +42,7 @@ def get_ocean_cleanup():
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
         html = requests.get("https://theoceancleanup.com/dashboard/", headers=headers, timeout=10).text
-        match = re.search(r'(\d{1,3}(?:,\d{3})*) kg of trash removed in total', html)
+        match = re.search(r'(\d{1,3}(?:,\d{3})*) kg of trash removed', html, re.I)
         if match:
             return int(match.group(1).replace(',', ''))
         return 44193195
@@ -52,41 +52,41 @@ def get_ocean_cleanup():
 ocean_kg = get_ocean_cleanup()
 
 # === MAP ===
-m = folium.Map(location=[20, 0], zoom_start=2, tiles='CartoDB positron', prefer_canvas=True)  # Default light tile
+m = folium.Map(location=[20, 0], zoom_start=2, tiles='CartoDB positron', prefer_canvas=True)
 
 # Base tiles
 folium.TileLayer('Stamen Terrain', name="Terrain", attr='Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap').add_to(m)
 folium.TileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', name="Topo", attr='© OpenTopoMap (CC-BY-SA)').add_to(m)
 
-# Electricity layer — works with current test token
+# Electricity layer — v3, works with test key (limited zones)
 token = st.secrets.get("electricitymaps_token", "")
 if token:
     electricity_layer = folium.FeatureGroup(name="⚡ Live Low-Carbon Electricity %", show=True)
     try:
-        data = requests.get("https://api.electricitymaps.com/v5/carbon-intensity/latest", headers={"auth-token": token}).json()
+        data = requests.get("https://api.electricitymaps.com/v3/carbon-intensity/latest", headers={"auth-token": token}).json()
         zones_geo = requests.get("https://raw.githubusercontent.com/electricitymaps/electricitymaps-contrib/master/web/geo/world.geojson").json()
         
         for feature in zones_geo["features"]:
             zone = feature["properties"]["zoneName"]
             if zone in data and "lowCarbonPercentage" in data[zone]:
                 pct = data[zone]["lowCarbonPercentage"]
-                color = "darkgreen" if pct > 80 else "green" if pct > 60 else "lightgreen" if pct > 40 else "gold" if pct > 20 else "orange"
+                color = "darkgreen" if pct > 80 else "green" if pct > 60 else "lightgreen" if pct > 40 else "yellow" if pct > 20 else "orange"
                 folium.GeoJson(feature, style_function=lambda f, c=color: {"fillColor": c, "color": "#333", "weight": 1, "fillOpacity": 0.7},
-                               tooltip=f"<b>{data[zone].get('zoneName', zone)}</b>: {pct}% low-carbon").add_to(electricity_layer)
+                               tooltip=f"<b>{zone}</b>: {pct}% low-carbon").add_to(electricity_layer)
         electricity_layer.add_to(m)
     except Exception as e:
-        st.sidebar.warning(f"Electricity layer error: {e}")
+        st.sidebar.warning(f"Electricity error: {e}")
 
 # Restoration sites — beautiful clusters
 if not restor_df.empty:
     restor_layer = folium.FeatureGroup(name="🌲 Active Restoration Sites (Restor)", show=True)
-    cluster = MarkerCluster(name="Restoration sites").add_to(restor_layer)
+    cluster = MarkerCluster().add_to(restor_layer)
     for _, row in restor_df.iterrows():
         p = row["properties"]
         coords = row["geometry"]["coordinates"][::-1]
         folium.CircleMarker(
-            location=coords, radius=5, weight=1, color="#006400", fillColor="#00ff41", fillOpacity=0.8,
-            popup=folium.Popup(f"<b>{p.get('name','Site')}</b><br>Trees: {p.get('treesPlanted','?')}<br>Hectares: {p.get('hectaresRestored','?')}", max_width=200)
+            location=coords, radius=5, color="#006400", fill=True, fill_color="#00ff00", fill_opacity=0.8,
+            popup=f"<b>{p.get('name','Site')}</b><br>Trees: {p.get('treesPlanted','?')}<br>Hectares: {p.get('hectaresRestored','?')}"
         ).add_to(cluster)
     restor_layer.add_to(m)
 
