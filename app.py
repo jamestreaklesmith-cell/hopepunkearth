@@ -120,8 +120,19 @@ if not restor_df.empty:
     restor_layer.add_to(m)
 
 # Extra goodies
-folium.TileLayer("Stamen Terrain", name="Terrain").add_to(m)
-folium.TileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", name="Topo", attr="OpenTopoMap").add_to(m)
+# Extra goodies – now with proper legal love letters
+folium.TileLayer(
+    tiles='Stamen Terrain',
+    name='Terrain',
+    attr='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> — Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+).add_to(m)
+
+folium.TileLayer(
+    tiles='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    name='Topo',
+    attr='© OpenStreetMap contributors, © OpenTopoMap (CC-BY-SA)'
+).add_to(m)
+
 Fullscreen().add_to(m)
 LocateControl().add_to(m)
 folium.LayerControl().add_to(m)
