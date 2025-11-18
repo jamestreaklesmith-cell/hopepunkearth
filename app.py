@@ -16,8 +16,12 @@ st.markdown("### The antidote to doomscrolling — watching humanity actually wi
 def get_restor():
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
-        url = "https://api.restor.eco/sites?limit=15000"
-        data = requests.get(url, headers=headers, timeout=10).json()
+        url = "https://api.restor.eco/sites?limit=5000"
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            st.error(f"Restor status {response.status_code}: {response.text[:200]}")
+            return pd.DataFrame()
+        data = response.json()
         return pd.DataFrame(data["features"])
     except Exception as e:
         st.error(f"Restor error: {e}")
@@ -31,9 +35,9 @@ def get_ecosia():
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
         html = requests.get("https://www.ecosia.org/trees", headers=headers, timeout=10).text
         match = re.search(r'(\d{1,3}(?:,\d{3})*) trees planted', html)
-        return int(match.group(1).replace(',', '')) if match else 243624869
+        return int(match.group(1).replace(',', '')) if match else 215000000
     except:
-        return 243624869
+        return 215000000
 
 ecosia = get_ecosia()
 
@@ -54,7 +58,7 @@ ocean_kg = get_ocean_cleanup()
 # === MAP ===
 m = folium.Map(location=[20, 0], zoom_start=2, tiles='CartoDB positron', prefer_canvas=True)
 
-# Extra tiles (removed Stamen to avoid bug)
+# Extra tiles (removed Stamen to avoid log error)
 folium.TileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', name="Topo", attr='© OpenTopoMap (CC-BY-SA)').add_to(m)
 
 # Electricity layer — v3, works with test key (limited zones)
