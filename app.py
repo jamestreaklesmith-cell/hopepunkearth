@@ -31,9 +31,9 @@ def get_ecosia():
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
         html = requests.get("https://www.ecosia.org/trees", headers=headers, timeout=10).text
         match = re.search(r'(\d{1,3}(?:,\d{3})*) trees planted', html)
-        return int(match.group(1).replace(',', '')) if match else 215000000
+        return int(match.group(1).replace(',', '')) if match else 243624869
     except:
-        return 215000000
+        return 243624869
 
 ecosia = get_ecosia()
 
@@ -54,8 +54,7 @@ ocean_kg = get_ocean_cleanup()
 # === MAP ===
 m = folium.Map(location=[20, 0], zoom_start=2, tiles='CartoDB positron', prefer_canvas=True)
 
-# Base tiles
-folium.TileLayer('Stamen Terrain', name="Terrain", attr='Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap').add_to(m)
+# Extra tiles (removed Stamen to avoid bug)
 folium.TileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', name="Topo", attr='© OpenTopoMap (CC-BY-SA)').add_to(m)
 
 # Electricity layer — v3, works with test key (limited zones)
@@ -102,6 +101,6 @@ with st.sidebar:
     st.markdown("---")
     st.caption(f"Updated: {datetime.now().strftime('%H:%M UTC · %b %d')}")
 
-st_folium(m, width="100%", height=800, returned_objects=[])
+st_folium(m, width="100%", height=800)
 
 st.caption("v1.0 fixed · Built by James + Grok · Austin, Texas · Nov 18 2025")
